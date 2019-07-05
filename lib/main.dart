@@ -53,47 +53,44 @@ class ComicViewer extends StatelessWidget {
       pageSize: 6, pageFuture: BackendService.getPage);
   @override
   Widget build(BuildContext context) {
-    // return Container(
-    //   color: Colors.red,
+    // return PagewiseListView(
+    //   itemBuilder: this._itemBuilder,
+    //   pageLoadController: this._pageLoadController,
     // );
-    return PagewiseListView(
-      itemBuilder: this._itemBuilder,
-      pageLoadController: this._pageLoadController,
-    );
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        this._pageLoadController.reset();
-        await Future.value({});
-      },
-      child: PagewiseListView(
-        itemBuilder: this._itemBuilder,
-        pageLoadController: this._pageLoadController,
+    //   return RefreshIndicator(
+    //     onRefresh: () async {
+    //       this._pageLoadController.reset();
+    //       await Future.value({});
+    //     },
+    //     child: PagewiseListView(
+    //       itemBuilder: this._itemBuilder,
+    //       pageLoadController: this._pageLoadController,
+    //     ),
+    //   );
+    // }
+
+    return Container(
+      child: ClipRect(
+        // child: PhotoView.customChild(
+        child: ListView(
+          children: <Widget>[
+            Image.network(
+                'http://www.trippingoveryou.com/comics/1555002384-tripping17_09.png'),
+            Image.network(
+                'http://www.trippingoveryou.com/comics/1555992572-tripping17_11.png'),
+            Image.network(
+                'http://www.trippingoveryou.com/comics/1556420041-tripping17_12.png'),
+            Image.network(
+                'http://www.trippingoveryou.com/comics/1556678034-tripping17_13.png'),
+          ],
+        ),
+        //   childSize: const Size(820.0, 850.0),
+        //   initialScale: 1.0,
+        // ),
       ),
     );
   }
-
-  // return Container(
-  //   child: ClipRect(
-  //     // child: PhotoView.customChild(
-  //     child: ListView(
-  //       children: <Widget>[
-  //         Image.network(
-  //             'http://www.trippingoveryou.com/comics/1555002384-tripping17_09.png'),
-  //         Image.network(
-  //             'http://www.trippingoveryou.com/comics/1555992572-tripping17_11.png'),
-  //         Image.network(
-  //             'http://www.trippingoveryou.com/comics/1556420041-tripping17_12.png'),
-  //         Image.network(
-  //             'http://www.trippingoveryou.com/comics/1556678034-tripping17_13.png'),
-  //       ],
-  //     ),
-  //     //   childSize: const Size(820.0, 850.0),
-  //     //   initialScale: 1.0,
-  //     // ),
-  //   ),
-  // );
-  // }
 
   Widget _itemBuilder(context, ImageModel entry, _) {
     return Container(color: Colors.red); //Container(
