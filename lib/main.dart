@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pagewise/flutter_pagewise.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:http/http.dart' as http;
+import 'package:html/parser.dart'; // Contains HTML parsers to generate a Document object
+import 'package:html/dom.dart'; // Contains DOM related classes for extracting data from elements
 
 void main() => runApp(MyApp());
 
@@ -49,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class ComicViewer extends StatelessWidget {
-  final _pageLoadController = PagewiseLoadController<ImageModel>(
+  final _pageLoadController = PagewiseLoadController<PageModel>(
       pageSize: 6, pageFuture: BackendService.getPage);
   @override
   Widget build(BuildContext context) {
@@ -92,7 +94,7 @@ class ComicViewer extends StatelessWidget {
     // );
   }
 
-  Widget _itemBuilder(context, ImageModel entry, _) {
+  Widget _itemBuilder(context, PageModel entry, _) {
     return SizedBox(
       width: 200.0,
       height: 300.0,
@@ -101,7 +103,7 @@ class ComicViewer extends StatelessWidget {
           decoration: BoxDecoration(
               color: Colors.grey[200],
               image: DecorationImage(
-                  image: NetworkImage(entry.thumbnailUrl), fit: BoxFit.fill)),
+                  image: NetworkImage(entry.imageUrl), fit: BoxFit.fill)),
         ),
       ),
     );
@@ -148,84 +150,46 @@ class ComicViewer extends StatelessWidget {
 }
 
 class BackendService {
-  // static get http => null;
-
-  // static Future<List<PostModel>> getPosts(offset, limit) async {
-  //   final responseBody = (await http.get(
-  //           'http://jsonplaceholder.typicode.com/posts?_start=$offset&_limit=$limit'))
-  //       .body;
-
-  //   // The response body is an array of items
-  //   return PostModel.fromJsonList(json.decode(responseBody));
-  // }
-
   // Returns the page at [pageNumber] plus the next 2.
-  static Future<List<ImageModel>> getPage(pageNumber) async {
-    var fut = http.get(
-        'http://jsonplaceholder.typicode.com/photos?_start=$pageNumber&_limit=3');
-    var resp = await fut;
-    final responseBody = resp.body;
+  static Future<List<PageModel>> getPage(pageNumber) async {
+    final archiveHtml =
+        (await http.get('http://www.trippingoveryou.com/comic/archive')).body;
 
-    // final responseBody = (await http.get(
-    //         'http://jsonplaceholder.typicode.com/photos?_start=$pageNumber&_limit=3'))
-    //     .body;
+    final archiveDocument = parse(archiveHtml);
+    // todo: cache the whole list
+    const totalPages = 3;
+    final options = archiveDocument
+        .querySelectorAll('select[name="comic"]>option')
+        .sublist(
+            pageNumber +
+                1, // Add one to offset for the leading "select a comic" entry
+            pageNumber + 1 + totalPages);
+    final pages = List<PageModel>();
+    for (var option in options) {
+      // Get the page image url by visiting the page
+      final pageUrl =
+          'http://www.trippingoveryou.com/' + option.attributes['value'];
+      final pageHtml = (await http.get(pageUrl)).body;
+      final pageDocument = parse(pageHtml);
+      final img = pageDocument.querySelector('#cc-comic');
+      final imageUrl = img.attributes['src'];
+      final hoverText = img.attributes['title'];
 
-    // The response body is an array of items.
-    return ImageModel.fromJsonList(json.decode(responseBody));
-  }
-
-  static Future<List<ImageModel>> getImages(offset, limit) async {
-    final responseBody = (await http.get(
-            'http://jsonplaceholder.typicode.com/photos?_start=$offset&_limit=3'))
-        .body;
-
-    // The response body is an array of items.
-    return ImageModel.fromJsonList(json.decode(responseBody));
-  }
-}
-
-class PostModel {
-  String title;
-  String body;
-
-  PostModel.fromJson(obj) {
-    this.title = obj['title'];
-    this.body = obj['body'];
-  }
-
-  static List<PostModel> fromJsonList(jsonList) {
-    return jsonList.map<PostModel>((obj) => PostModel.fromJson(obj)).toList();
-  }
-}
-
-class ImageModel {
-  String title;
-  String id;
-  String thumbnailUrl;
-
-  ImageModel.fromJson(obj) {
-    this.title = obj['title'];
-    this.id = obj['id'].toString();
-    this.thumbnailUrl = obj['thumbnailUrl'];
-  }
-
-  static List<ImageModel> fromJsonList(jsonList) {
-    return jsonList.map<ImageModel>((obj) => ImageModel.fromJson(obj)).toList();
+      pages.add(PageModel(option.text, pageUrl, imageUrl));
+    }
+    return pages;
   }
 }
 
 class PageModel {
   String title;
-  String url;
+  String id;
+  String pageUrl;
   String imageUrl;
 
-  PageModel.fromJson(obj) {
-    this.title = obj['title'];
-    this.url = obj['url'].toString();
-    this.imageUrl = obj['imageUrl'];
-  }
-
-  static List<PageModel> fromJsonList(jsonList) {
-    return jsonList.map<PageModel>((obj) => PageModel.fromJson(obj)).toList();
+  PageModel(title, pageUrl, imageUrl) {
+    this.title = title;
+    this.pageUrl = pageUrl;
+    this.imageUrl = imageUrl;
   }
 }

@@ -26,6 +26,8 @@ dependencies:
   flutter_pagewise:
   http: ^0.12.0+2
   photo_view:
+  html:
+ 
 
 dev_dependencies:
   flutter_test:
